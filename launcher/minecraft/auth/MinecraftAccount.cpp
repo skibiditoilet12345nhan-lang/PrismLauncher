@@ -208,29 +208,6 @@ bool MinecraftAccount::shouldRefresh() const
 {
     return false; // Never attempt to refresh or validate tokens online
 }
-    switch (data.validity_) {
-        case Validity::Certain: {
-            break;
-        }
-        case Validity::None: {
-            return false;
-        }
-        case Validity::Assumed: {
-            return true;
-        }
-    }
-    auto now = QDateTime::currentDateTimeUtc();
-    auto issuedTimestamp = data.yggdrasilToken.issueInstant;
-    auto expiresTimestamp = data.yggdrasilToken.notAfter;
-
-    if (!expiresTimestamp.isValid()) {
-        expiresTimestamp = issuedTimestamp.addSecs(24 * 3600);
-    }
-    if (now.secsTo(expiresTimestamp) < (12 * 3600)) {
-        return true;
-    }
-    return false;
-}
 
 void MinecraftAccount::fillSession(AuthSessionPtr session)
 {
