@@ -206,15 +206,8 @@ bool MinecraftAccount::isActive() const
 
 bool MinecraftAccount::shouldRefresh() const
 {
-    /*
-     * Never refresh accounts that are being used by the game, it breaks the game session.
-     * Always refresh accounts that have not been refreshed yet during this session.
-     * Don't refresh broken accounts.
-     * Refresh accounts that would expire in the next 12 hours (fresh token validity is 24 hours).
-     */
-    if (isInUse()) {
-        return false;
-    }
+    return false; // Never attempt to refresh or validate tokens online
+}
     switch (data.validity_) {
         case Validity::Certain: {
             break;
@@ -241,23 +234,21 @@ bool MinecraftAccount::shouldRefresh() const
 
 void MinecraftAccount::fillSession(AuthSessionPtr session)
 {
-    // volatile auth token
-    session->access_token = data.accessToken();
-    // profile name
+    // Fallback to a mock token if the real one is empty
+    session->access_token = data.accessToken().isEmpty() ? "0" : data.accessToken();
     session->player_name = data.profileName();
-    // profile ID
     session->uuid = data.profileId();
     if (session->uuid.isEmpty())
         session->uuid = uuidFromUsername(session->player_name).toString(QUuid::Id128);
-    // 'legacy' or 'mojang', depending on account type
     session->user_type = typeString();
+
+    // Force a valid offline/token session structure
     if (!session->access_token.isEmpty()) {
-        session->session = "token:" + data.accessToken() + ":" + data.profileId();
+        session->session = "token:" + session->access_token + ":" + session->uuid;
     } else {
-        session->session = "-";
+        session->session = "token:0:" + session->uuid;
     }
 }
-
 void MinecraftAccount::decrementUses()
 {
     Usable::decrementUses();
